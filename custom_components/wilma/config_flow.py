@@ -75,15 +75,30 @@ class WilmaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if not children:
                     errors["base"] = "no_children"
                 else:
-                    # Use base_url as the unique ID so the same tenant can't
-                    # be added twice.
+                    base_url = user_input[CONF_BASE_URL].rstrip("/")
+                    username = user_input[CONF_USERNAME].strip()
+
+                    # Unique ID is base_url + username, so several accounts
+                    # (e.g. both parents) can be added for the same school,
+                    # but the same account can't be added twice.
                     await self.async_set_unique_id(
-                        user_input[CONF_BASE_URL].rstrip("/").lower()
+                        f"{base_url.lower()}|{username.lower()}"
                     )
                     self._abort_if_unique_id_configured()
 
+                    # Also catch entries created before this change, whose
+                    # unique ID is just the base URL.
+                    for entry in self._async_current_entries():
+                        if (
+                            entry.data.get(CONF_BASE_URL, "").rstrip("/").lower()
+                            == base_url.lower()
+                            and entry.data.get(CONF_USERNAME, "").strip().lower()
+                            == username.lower()
+                        ):
+                            return self.async_abort(reason="already_configured")
+
                     return self.async_create_entry(
-                        title=user_input[CONF_BASE_URL].rstrip("/"),
+                        title=f"{base_url} ({username})",
                         data={
                             CONF_BASE_URL:      user_input[CONF_BASE_URL].rstrip("/"),
                             CONF_USERNAME:      user_input[CONF_USERNAME],

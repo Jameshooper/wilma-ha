@@ -18,7 +18,7 @@
       "unknown": "Unexpected error. Check the Home Assistant logs."
     },
     "abort": {
-      "already_configured": "This Wilma account is already configured."
+      "already_configured": "This Wilma account (URL and username) is already configured."
     }
   },
   "options": {
